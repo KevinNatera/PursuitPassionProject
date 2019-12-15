@@ -57,10 +57,30 @@ class BattleScene: SKScene {
     
     lazy var enemyHPLabel: SKAdvancedLabelNode = {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
-        label.fontSize = CGFloat(15.0)
+        label.fontSize = CGFloat(13.0)
         label.fontColor = .black
-        label.position = CGPoint(x: -160, y: 275)
+        label.position = CGPoint(x: -165, y: 275)
         label.text = "Enemy HP:  \(Int(enemy.currentHealth)) / \(Int(enemy.maxHealth))"
+        label.horizontalAlignmentMode = .left
+        return label
+    }()
+    
+    lazy var heroHPLabel: SKAdvancedLabelNode = {
+        let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
+        label.fontSize = CGFloat(13.0)
+        label.fontColor = .black
+        label.position = CGPoint(x: 0, y: 275)
+        label.text = "| Hero HP:  \(Int(hero.currentHealth)) / \(Int(hero.maxHealth))"
+        label.horizontalAlignmentMode = .left
+        return label
+    }()
+    
+    lazy var heroNRGLabel: SKAdvancedLabelNode = {
+        let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
+        label.fontSize = CGFloat(13.0)
+        label.fontColor = .black
+        label.position = CGPoint(x: 0, y: 255)
+        label.text = "| Hero NRG:  \(Int(hero.currentEnergy)) / \(Int(hero.maxEnergy))"
         label.horizontalAlignmentMode = .left
         return label
     }()
@@ -303,7 +323,7 @@ class BattleScene: SKScene {
                 
                 highlightAbilityButton()
                 updateInfoLabel(location: location, text: "Switch to ability commands")
-            
+                
             } else if itemButton.contains(location) && !itemButton.isPaused {
                 
                 highlightItemButton()
@@ -380,6 +400,8 @@ class BattleScene: SKScene {
         addChild(infoLabel)
         addChild(statusBackground)
         addChild(enemyHPLabel)
+        addChild(heroHPLabel)
+        addChild(heroNRGLabel)
         addChild(enemyHealthBar)
         addChild(enemyHealthBarDamage)
         addChild(heroHealthBar)
@@ -641,7 +663,7 @@ class BattleScene: SKScene {
             hero.currentHealth += heal
             heroNumberLabel.text = "+\(Int(heal)) HP!"
         }
-    
+        
         hero.condition = .normal
         heroNumberLabel.fontColor = .green
         heroNumberLabel.alpha = 1
@@ -717,6 +739,8 @@ class BattleScene: SKScene {
     }
     
     private func animateHeroHealthBar() {
+        heroHPLabel.text = "| Hero HP: \(Int(hero.currentHealth)) / \(Int(hero.maxHealth))"
+        
         if hero.currentHealth > hero.maxHealth {
             heroHealthBar.alpha = 1
             heroHealthBar.size = CGSize(width: 50, height: 15)
@@ -729,6 +753,8 @@ class BattleScene: SKScene {
     }
     
     private func animateHeroEnergyBar(energyCost: Double) {
+        
+        heroNRGLabel.text = "| Hero NRG: \(Int(hero.currentEnergy)) / \(Int(hero.maxEnergy))"
         
         if hero.currentEnergy > hero.maxEnergy {
             heroEnergyBar.alpha = 1
@@ -759,7 +785,7 @@ class BattleScene: SKScene {
         } else {
             enemy.healthCondition = .healthy
         }
-
+        
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             switch self.enemy.healthCondition {
