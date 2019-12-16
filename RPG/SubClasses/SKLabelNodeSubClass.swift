@@ -172,7 +172,7 @@ extension SKAdvancedLabelNode {
         }
     }
     
-    func shake(delay:TimeInterval, infinite:Bool = false, duration:TimeInterval = 1.0, amplitudeX:CGFloat = 0.0, amplitudeY:CGFloat = 40.0, speed:TimeInterval=0.04) {
+    func shake(delay:TimeInterval, infinite:Bool = false, duration:TimeInterval = 0.5, amplitudeX:CGFloat = 0.0, amplitudeY:CGFloat = 40.0, speed:TimeInterval=0.04) {
         if labels.count > 0 && self.action(forKey: "shake") == nil {
             let originalPositions = self.labels.map({ return $0.position })
             let main = SKAction.run { [weak self] in

@@ -127,7 +127,6 @@ class BattleScene: SKScene {
         background.position = CGPoint(x: 0, y: 0)
         background.alpha = 0
         return background
-        
     }()
     
     
@@ -184,7 +183,7 @@ class BattleScene: SKScene {
     }()
     
     
-    //MARK: - Villain UI Nodes
+    //MARK: - Enemy UI Nodes
     
     lazy var enemyHealthBar: SKSpriteNode = {
         let bar = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 15))
@@ -211,6 +210,17 @@ class BattleScene: SKScene {
         return label
     }()
     
+    lazy var enemyStatusLabel: SKAdvancedLabelNode = {
+        let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
+        label.fontSize = CGFloat(15.0)
+        label.fontColor = .black
+        label.position = CGPoint(x: -90, y: 30)
+        label.alpha = 0
+        label.zPosition = 5
+        label.horizontalAlignmentMode = .center
+        return label
+    }()
+    
     lazy var enemyTargetArrow: SKSpriteNode = {
         let arrow = SKSpriteNode(imageNamed: "downArrow")
         arrow.position = CGPoint(x: -140, y: 50)
@@ -223,8 +233,9 @@ class BattleScene: SKScene {
         label.fontSize = CGFloat(15.0)
         label.fontColor = .black
         label.position = CGPoint(x: -140, y: 70)
-        label.text = "Enemy"
+        label.text = "Target"
         label.horizontalAlignmentMode = .center
+        
         return label
     }()
     
@@ -263,6 +274,17 @@ class BattleScene: SKScene {
         label.fontSize = CGFloat(15.0)
         label.fontColor = .black
         label.position = CGPoint(x: 65, y: -10)
+        label.alpha = 0
+        label.zPosition = 5
+        label.horizontalAlignmentMode = .center
+        return label
+    }()
+    
+    lazy var heroStatusLabel: SKAdvancedLabelNode = {
+        let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
+        label.fontSize = CGFloat(15.0)
+        label.fontColor = .black
+        label.position = CGPoint(x: 90, y: 30)
         label.alpha = 0
         label.zPosition = 5
         label.horizontalAlignmentMode = .center
@@ -333,6 +355,10 @@ class BattleScene: SKScene {
                 
                 highlightRefreshButton()
                 updateInfoLabel(location: location, text: "Chant for one turn before restoring \(Int(hero.strength * 4)) HP. Consumes 25 NRG.")
+            } else if enemy.contains(location) {
+                updateInfoLabel(location: location, text: "Strength: \(Int(enemy.strength))")
+            } else if hero.contains(location){
+                updateInfoLabel(location: location, text: "Strength: \(Int(hero.strength))")
             } else {
                 revertButtons()
                 infoLabel.alpha = 0
@@ -395,6 +421,7 @@ class BattleScene: SKScene {
         addChild(itemButton)
         addChild(refreshButton)
         addChild(enemyNumberLabel)
+        addChild(enemyStatusLabel)
         addChild(enemyTargetArrow)
         addChild(targetLabel)
         addChild(infoLabel)
@@ -407,6 +434,7 @@ class BattleScene: SKScene {
         addChild(heroHealthBar)
         addChild(heroHealthBarDamage)
         addChild(heroNumberLabel)
+        addChild(heroStatusLabel)
         addChild(heroEnergyBar)
         addChild(heroEnergyBarDepletion)
         
@@ -414,7 +442,7 @@ class BattleScene: SKScene {
         messageLabel.shake(delay: 0.2)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5 ) {
-            self.showMessage(text: "Select a command!")
+            self.showMessage(text: "Long press to view command info!")
             self.enableCommandButtons()
         }
     }
@@ -426,6 +454,7 @@ class BattleScene: SKScene {
     
     
     //MARK: - Button Funcs
+    
     
     private func updateInfoLabel(location: CGPoint, text: String) {
         infoLabel.removeAllChildren()
@@ -467,9 +496,6 @@ class BattleScene: SKScene {
         
         disableAbilityButtons()
     }
-    
-    
-    
     
     private func highlightAttackButton() {
         attackButton.defaultButton.isHidden = true
@@ -545,9 +571,13 @@ class BattleScene: SKScene {
             self.messageLabel.shake(delay: 0.2)
             self.hero.currentHealth = self.hero.maxHealth
             self.hero.currentEnergy = self.hero.maxEnergy
+            self.hero.strength = 25
+            self.hero.condition = .normal
+            self.hero.statusProblem = .none
             self.animateHero()
             self.animateHeroHealthBar()
             self.enemy.currentHealth = self.enemy.maxHealth
+            self.enemy.strength = 25
             self.animateEnemy()
             self.animateHeroHealthBar()
             self.animateHeroEnergyBar(energyCost: 0)
@@ -560,7 +590,6 @@ class BattleScene: SKScene {
         
         //Hero Phase
         
-        showMessage(text: "Hero's turn")
         
         var turnsLeft = 0
         
@@ -574,7 +603,7 @@ class BattleScene: SKScene {
                 if chantTurns <= 0 {
                     switch abilityType {
                     case "refresh":
-                        heroCastsRefresh()
+                        self.heroCastsRefresh()
                     default:
                         break
                     }
@@ -583,13 +612,26 @@ class BattleScene: SKScene {
                     break
                 }
             }
+        case "paralysis":
+            showMessage(text: "Paralyzed!")
+            turnsLeft = 0
+            heroStatusLabel.alpha = 1
+            heroStatusLabel.text = "Paralyzed!"
+            hero.removeAllActions()
+            hero.texture = heroDamaged
+            animateHero()
+            hero.statusProblem = .none
+            
         default:
             break
         }
-        self.animateEnemy()
+        
+        animateEnemy()
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
             self.enemyNumberLabel.alpha = 0
-            
+            self.heroNumberLabel.alpha = 0
+            self.heroStatusLabel.alpha = 0
             
             //Villain Phase
             
@@ -597,23 +639,30 @@ class BattleScene: SKScene {
                 if self.enemy.currentHealth > 0 {
                     
                     self.enemyAttacks()
-                    self.animateHeroHealthBar()
-                    self.showMessage(text: "Enemy's turn")
+                    
                     
                     //Reset
                     
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        self.enemyStatusLabel.alpha = 0
+                        self.heroStatusLabel.alpha = 0
                         self.heroNumberLabel.alpha = 0
+                        
                         if self.hero.currentHealth > 0 {
                             
-                            self.messageLabel.text = "Select a command!"
-                            
-                            
-                            self.enableCommandButtons()
-                            
-                            
-                            if turnsLeft > 0 {
-                                self.battlePhase(attackType: "ability", abilityType: abilityType , chantTurns: chantTurns! - 1)
+                            switch self.hero.statusProblem {
+                            case .paralysis:
+                                self.battlePhase(attackType: "paralysis", abilityType: nil, chantTurns: nil)
+                                
+                            default:
+                                
+                                self.showMessage(text: "Select a command!")
+                                self.enableCommandButtons()
+                                
+                                
+                                if turnsLeft > 0 {
+                                    self.battlePhase(attackType: "ability", abilityType: abilityType , chantTurns: turnsLeft - 1)
+                                }
                             }
                         }
                     }
@@ -627,6 +676,7 @@ class BattleScene: SKScene {
     //MARK: - Command Funcs
     
     private func heroAttacks() {
+        showMessage(text: "Hero attacks")
         let attackPower = hero.strength - enemy.durability
         enemy.currentHealth -= attackPower
         enemyNumberLabel.text = "\(Int(attackPower))!"
@@ -665,6 +715,7 @@ class BattleScene: SKScene {
         }
         
         hero.condition = .normal
+        hero.statusProblem = .none
         heroNumberLabel.fontColor = .green
         heroNumberLabel.alpha = 1
         heroNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
@@ -675,20 +726,69 @@ class BattleScene: SKScene {
         animateHero()
     }
     
+    
+    
+    
+    //MARK: - Enemy Attacks
     private func enemyAttacks() {
+        
+        let attackType = Int.random(in: 15...16)
+        
+        
+        
         let villainAttackPower = enemy.strength - hero.durability
-        hero.currentHealth -= villainAttackPower
-        heroNumberLabel.text = "\(Int(villainAttackPower))!"
+        switch attackType {
+        case 1...20:
+            switch attackType {
+            case 1...15:
+                showMessage(text: "Enemy casts Enrage!")
+                enemy.strength += 10
+                enemyStatusLabel.alpha = 1
+                enemyStatusLabel.text = "Strength up!"
+                enemyStatusLabel.shake(delay: 0.2)
+                
+            case 16...20:
+                showMessage(text: "Critical Hit!")
+                hero.statusProblem = .paralysis
+                hero.condition = .normal
+                hero.currentHealth -= villainAttackPower * 2
+                heroNumberLabel.text = "\(Int(villainAttackPower * 2))!"
+                heroNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
+                heroNumberLabel.shake(delay: 0.2)
+                heroStatusLabel.alpha = 1
+                heroStatusLabel.text = "Paralyzed!"
+                heroStatusLabel.shake(delay: 0.2)
+                heroNumberLabel.alpha = 1
+                hero.removeAllActions()
+                hero.texture = heroDamaged
+                animateHeroHealthBar()
+            default:
+                break
+            }
+            
+            
+            
+        case 90...100:
+            showMessage(text: "You're lucky boi")
+            heroNumberLabel.text = ""
+            
+        default:
+            showMessage(text: "Enemy attacks")
+            hero.currentHealth -= villainAttackPower
+            heroNumberLabel.text = "\(Int(villainAttackPower))!"
+            heroNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
+            heroNumberLabel.alpha = 1
+            hero.removeAllActions()
+            hero.texture = heroDamaged
+        }
+        
         heroNumberLabel.fontColor = .black
-        heroNumberLabel.alpha = 1
-        heroNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
-        hero.removeAllActions()
-        hero.texture = heroDamaged
+        
+        animateHeroHealthBar()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             self.animateHero()
         }
-        
     }
     
     
@@ -705,7 +805,6 @@ class BattleScene: SKScene {
         } else {
             hero.healthCondition = .healthy
         }
-        
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             if self.hero.condition == .chanting {
@@ -731,7 +830,6 @@ class BattleScene: SKScene {
                     self.messageLabel.shake(delay: 0.2)
                     self.resetButton.alpha = 1
                     self.resetButton.isPaused = false
-                    
                 }
             }
         }
@@ -773,7 +871,9 @@ class BattleScene: SKScene {
         }
     }
     
-    //MARK: - Villain Animations
+    
+    
+    //MARK: - Enemy Animations
     
     private func animateEnemy() {
         
