@@ -17,6 +17,7 @@ class BattleScene: SKScene {
         let sprite = CharacterSprite(imageNamed: "Cecil_base_ready")
         sprite.position = CGPoint(x: frame.minX + 330, y: frame.minY + 330)
         sprite.strength = 25
+        sprite.maxHealth = 200
         sprite.currentHealth = sprite.maxHealth
         return sprite
     }()
@@ -34,7 +35,7 @@ class BattleScene: SKScene {
         let sprite = CharacterSprite(imageNamed: "Golbez_base_ready")
         sprite.position = CGPoint(x: frame.minX + 70, y: frame.minY + 330)
         sprite.strength = 25
-        sprite.maxHealth = 100
+        sprite.maxHealth = 200
         sprite.currentHealth = sprite.maxHealth
         sprite.xScale = -1
         return sprite
@@ -442,7 +443,7 @@ class BattleScene: SKScene {
         messageLabel.shake(delay: 0.2)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5 ) {
-            self.showMessage(text: "Long press to view command info!")
+            self.showMessage(text: "Long press a button for command info!")
             self.enableCommandButtons()
         }
     }
@@ -732,7 +733,7 @@ class BattleScene: SKScene {
     //MARK: - Enemy Attacks
     private func enemyAttacks() {
         
-        let attackType = Int.random(in: 15...16)
+        let attackType = Int.random(in: 1...50)
         
         
         
@@ -746,7 +747,6 @@ class BattleScene: SKScene {
                 enemyStatusLabel.alpha = 1
                 enemyStatusLabel.text = "Strength up!"
                 enemyStatusLabel.shake(delay: 0.2)
-                
             case 16...20:
                 showMessage(text: "Critical Hit!")
                 hero.statusProblem = .paralysis
@@ -766,11 +766,8 @@ class BattleScene: SKScene {
                 break
             }
             
-            
-            
         case 90...100:
             showMessage(text: "You're lucky boi")
-            heroNumberLabel.text = ""
             
         default:
             showMessage(text: "Enemy attacks")
@@ -912,8 +909,8 @@ class BattleScene: SKScene {
         
     }
     
+    
     private func animateEnemyHealthBar() {
-        
         
         enemyHPLabel.text = "Enemy HP: \(Int(enemy.currentHealth)) / \(Int(enemy.maxHealth))"
         
