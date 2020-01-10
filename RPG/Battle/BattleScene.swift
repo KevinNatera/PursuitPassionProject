@@ -18,7 +18,9 @@ class BattleScene: SKScene {
         sprite.position = CGPoint(x: frame.minX + 330, y: frame.minY + 330)
         sprite.strength = 25
         sprite.maxHealth = 200
+        sprite.maxEnergy = 120
         sprite.currentHealth = sprite.maxHealth
+        sprite.currentEnergy = sprite.maxEnergy
         return sprite
     }()
     
@@ -35,8 +37,9 @@ class BattleScene: SKScene {
         let sprite = CharacterSprite(imageNamed: "Golbez_base_ready")
         sprite.position = CGPoint(x: frame.minX + 70, y: frame.minY + 330)
         sprite.strength = 25
-        sprite.maxHealth = 200
+        sprite.maxHealth = 300
         sprite.currentHealth = sprite.maxHealth
+        sprite.currentEnergy = sprite.maxEnergy
         sprite.xScale = -1
         return sprite
     }()
@@ -177,6 +180,17 @@ class BattleScene: SKScene {
         button.defaultButton.position = CGPoint(x: -90, y: -160)
         button.defaultButton.size = CGSize(width: 150, height: 60)
         button.activeButton.position = CGPoint(x: -90, y: -160)
+        button.activeButton.size = CGSize(width: 150, height: 60)
+        button.isPaused = true
+        button.isHidden = true
+        return button
+    }()
+    
+    lazy var energyBurstButton: GGButton = {
+        let button = GGButton(defaultButtonImage: "EnergyBurstButton", activeButtonImage: "PressedEnergyBurstButton")
+        button.defaultButton.position = CGPoint(x: 90, y: -160)
+        button.defaultButton.size = CGSize(width: 150, height: 60)
+        button.activeButton.position = CGPoint(x: 90, y: -160)
         button.activeButton.size = CGSize(width: 150, height: 60)
         button.isPaused = true
         button.isHidden = true
@@ -356,10 +370,20 @@ class BattleScene: SKScene {
                 
                 highlightRefreshButton()
                 updateInfoLabel(location: location, text: "Chant for one turn before restoring \(Int(hero.strength * 4)) HP. Consumes 25 NRG.")
+                
+            } else if energyBurstButton.contains(location) && !energyBurstButton.isPaused {
+                
+                highlightEnergyBurstButton()
+                updateInfoLabel(location: location, text: "Unleash a vicious burst of raw energy and instantly deal \(Int(hero.strength * 4)) damage. Consumes 50 NRG.")
+                
             } else if enemy.contains(location) {
+                
                 updateInfoLabel(location: location, text: "Strength: \(Int(enemy.strength))")
-            } else if hero.contains(location){
+                
+            } else if hero.contains(location) {
+                
                 updateInfoLabel(location: location, text: "Strength: \(Int(hero.strength))")
+                
             } else {
                 revertButtons()
                 infoLabel.alpha = 0
@@ -403,6 +427,10 @@ class BattleScene: SKScene {
                 heroChargesRefresh()
             }
             
+            if energyBurstButton.contains(location) && !energyBurstButton.isPaused {
+                heroChargesEnergyBurst()
+            }
+            
         }
     }
     
@@ -421,6 +449,7 @@ class BattleScene: SKScene {
         addChild(backButton)
         addChild(itemButton)
         addChild(refreshButton)
+        addChild(energyBurstButton)
         addChild(enemyNumberLabel)
         addChild(enemyStatusLabel)
         addChild(enemyTargetArrow)
@@ -442,6 +471,7 @@ class BattleScene: SKScene {
         disableCommandButtons()
         messageLabel.shake(delay: 0.2)
         
+        print(energyBurstButton.isPaused)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5 ) {
             self.showMessage(text: "Long press a button for command info!")
             self.enableCommandButtons()
@@ -518,6 +548,11 @@ class BattleScene: SKScene {
         refreshButton.activeButton.isHidden = false
     }
     
+    private func highlightEnergyBurstButton() {
+        energyBurstButton.defaultButton.isHidden = true
+        energyBurstButton.activeButton.isHidden = false
+    }
+    
     
     private func revertButtons() {
         attackButton.defaultButton.isHidden = false
@@ -528,6 +563,8 @@ class BattleScene: SKScene {
         itemButton.activeButton.isHidden = true
         refreshButton.defaultButton.isHidden = false
         refreshButton.activeButton.isHidden = true
+        energyBurstButton.defaultButton.isHidden = false
+        energyBurstButton.activeButton.isHidden = true
     }
     
     private func enableCommandButtons() {
@@ -544,17 +581,24 @@ class BattleScene: SKScene {
     
     
     private func enableAbilityButtons() {
-        backButton.isHidden = false
         backButton.isPaused = false
+        backButton.isHidden = false
         refreshButton.isPaused = false
         refreshButton.isHidden = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            self.energyBurstButton.isPaused = false
+        }
+       
+        energyBurstButton.isHidden = false
     }
     
     private func disableAbilityButtons() {
-        backButton.isHidden = true
         backButton.isPaused = true
+        backButton.isHidden = true
         refreshButton.isPaused = true
         refreshButton.isHidden = true
+        energyBurstButton.isPaused = true
+        energyBurstButton.isHidden = true
     }
     
     
@@ -597,6 +641,7 @@ class BattleScene: SKScene {
         switch attackType {
         case "attack":
             heroAttacks()
+            
         case "ability":
             if let abilityType = abilityType, let chantTurns = chantTurns {
                 
@@ -605,6 +650,8 @@ class BattleScene: SKScene {
                     switch abilityType {
                     case "refresh":
                         self.heroCastsRefresh()
+                    case "energyBurst":
+                        self.heroCastsEnergyBurst()
                     default:
                         break
                     }
@@ -613,6 +660,9 @@ class BattleScene: SKScene {
                     break
                 }
             }
+        case "items":
+            showMessage(text: "Bruh did you read lol")
+            
         case "paralysis":
             showMessage(text: "Paralyzed!")
             turnsLeft = 0
@@ -622,7 +672,7 @@ class BattleScene: SKScene {
             hero.texture = heroDamaged
             animateHero()
             hero.statusProblem = .none
-            
+     
         default:
             break
         }
@@ -640,7 +690,6 @@ class BattleScene: SKScene {
                 if self.enemy.currentHealth > 0 {
                     
                     self.enemyAttacks()
-                    
                     
                     //Reset
                     
@@ -677,10 +726,22 @@ class BattleScene: SKScene {
     //MARK: - Command Funcs
     
     private func heroAttacks() {
-        showMessage(text: "Hero attacks")
-        let attackPower = hero.strength - enemy.durability
-        enemy.currentHealth -= attackPower
-        enemyNumberLabel.text = "\(Int(attackPower))!"
+        let attackType = Int.random(in: 1...50)
+        var heroAttackPower = hero.strength - enemy.durability
+        
+        switch attackType {
+        case 46...50:
+            showMessage(text: "Critical Hit!")
+            heroAttackPower *= 2
+            enemyNumberLabel.shake(delay: 0.05)
+            
+        default:
+            showMessage(text: "Hero attacks!")
+            
+        }
+        
+        enemy.currentHealth -= heroAttackPower
+        enemyNumberLabel.text = "\(Int(heroAttackPower))!"
         enemyNumberLabel.fontColor = .black
         enemyNumberLabel.alpha = 1.0
         enemyNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
@@ -698,12 +759,16 @@ class BattleScene: SKScene {
             animateHeroEnergyBar(energyCost: 25)
         } else {
             showMessage(text: "Not enough energy!")
-            
+            switchToCommands()
+            disableCommandButtons()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.showMessage(text: "Select a command!")
+                self.enableCommandButtons()
             }
         }
     }
+    
+  
     
     private func heroCastsRefresh() {
         let heal = hero.strength * 4
@@ -722,9 +787,49 @@ class BattleScene: SKScene {
         heroNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
         showMessage(text: "Hero casts Refresh!")
         
-        
         animateHeroHealthBar()
         animateHero()
+    }
+    
+    private func heroChargesEnergyBurst() {
+          if hero.currentEnergy >= 50 {
+            hero.currentEnergy -= 50
+            heroNumberLabel.alpha = 1
+            heroNumberLabel.fontColor = .blue
+            animateHeroEnergyBar(energyCost: 50)
+            hero.condition = .chanting
+            animateHero()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.battlePhase(attackType: "ability", abilityType: "energyBurst", chantTurns: 0)
+            }
+          } else {
+            showMessage(text: "Not enough energy!")
+            switchToCommands()
+            disableCommandButtons()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.showMessage(text: "Select a command!")
+                self.enableCommandButtons()
+            }
+        }
+      }
+    
+    
+    private func heroCastsEnergyBurst() {
+        let magicDamage = hero.strength * 4
+        hero.condition = .normal
+        animateHero()
+        showMessage(text: "Hero casts Energy Burst!")
+        enemy.currentHealth -= magicDamage
+        enemyNumberLabel.alpha = 1
+        enemyNumberLabel.text = "\(Int((magicDamage)))!"
+        enemyNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
+        enemyNumberLabel.shake(delay: 0.2)
+        enemy.texture = enemyDamaged
+        animateEnemyHealthBar()
+        animateEnemy()
+        switchToCommands()
+        disableCommandButtons()
+        
     }
     
     
@@ -735,9 +840,7 @@ class BattleScene: SKScene {
         
         let attackType = Int.random(in: 1...50)
         
-        
-        
-        let villainAttackPower = enemy.strength - hero.durability
+        let enemyAttackPower = enemy.strength - hero.durability
         switch attackType {
         case 1...20:
             switch attackType {
@@ -751,8 +854,8 @@ class BattleScene: SKScene {
                 showMessage(text: "Critical Hit!")
                 hero.statusProblem = .paralysis
                 hero.condition = .normal
-                hero.currentHealth -= villainAttackPower * 2
-                heroNumberLabel.text = "\(Int(villainAttackPower * 2))!"
+                hero.currentHealth -= enemyAttackPower * 2
+                heroNumberLabel.text = "\(Int(enemyAttackPower * 2))!"
                 heroNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
                 heroNumberLabel.shake(delay: 0.2)
                 heroStatusLabel.alpha = 1
@@ -766,13 +869,12 @@ class BattleScene: SKScene {
                 break
             }
             
-        case 90...100:
-            showMessage(text: "You're lucky boi")
-            
+        case 46...50:
+            showMessage(text: "Enemy attack missed!")
         default:
-            showMessage(text: "Enemy attacks")
-            hero.currentHealth -= villainAttackPower
-            heroNumberLabel.text = "\(Int(villainAttackPower))!"
+            showMessage(text: "Enemy attacks!")
+            hero.currentHealth -= enemyAttackPower
+            heroNumberLabel.text = "\(Int(enemyAttackPower))!"
             heroNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
             heroNumberLabel.alpha = 1
             hero.removeAllActions()
@@ -920,7 +1022,6 @@ class BattleScene: SKScene {
         } else if enemy.currentHealth > 0 {
             enemyHealthBar.alpha = 1
             enemyHealthBar.size = CGSize(width: (enemy.currentHealth/enemy.maxHealth) * 50, height: 15)
-            
         } else {
             enemyHealthBar.alpha = 0
             enemyHPLabel.text = "Enemy HP: 0 / \(Int(enemy.maxHealth))"
