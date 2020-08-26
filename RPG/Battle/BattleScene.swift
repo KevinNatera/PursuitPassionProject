@@ -9,18 +9,20 @@
 import SpriteKit
 import GameplayKit
 import UIKit
+import SwiftUI
 
 class BattleScene: SKScene {
     
     //MARK: - Character Nodes
     lazy var hero: CharacterSprite = {
         let sprite = CharacterSprite(imageNamed: "Cecil_base_ready")
-        sprite.position = CGPoint(x: frame.minX + 330, y: frame.minY + 330)
+        sprite.position = CGPoint(x: frame.minX + 70, y: frame.minY + 330)
         sprite.strength = 25
         sprite.maxHealth = 200
-        sprite.maxEnergy = 120
+        sprite.maxEnergy = 125
         sprite.currentHealth = sprite.maxHealth
         sprite.currentEnergy = sprite.maxEnergy
+        sprite.xScale = -1
         return sprite
     }()
     
@@ -35,12 +37,11 @@ class BattleScene: SKScene {
     
     lazy var enemy: CharacterSprite = {
         let sprite = CharacterSprite(imageNamed: "Golbez_base_ready")
-        sprite.position = CGPoint(x: frame.minX + 70, y: frame.minY + 330)
+        sprite.position = CGPoint(x: frame.minX + 330, y: frame.minY + 330)
         sprite.strength = 25
         sprite.maxHealth = 300
         sprite.currentHealth = sprite.maxHealth
         sprite.currentEnergy = sprite.maxEnergy
-        sprite.xScale = -1
         return sprite
     }()
     
@@ -52,8 +53,16 @@ class BattleScene: SKScene {
     
     //MARK: - UI Nodes
     
+    lazy var battleBackground: SKSpriteNode = {
+        let background = SKSpriteNode(imageNamed: "background")
+        background.position = CGPoint(x: 0, y: 0)
+        background.size = CGSize(width: frame.size.width , height: frame.size.height)
+        background.zPosition = -100
+        return background
+    }()
+    
     lazy var statusBackground: SKShapeNode = {
-        let background = SKShapeNode(rect: CGRect(x: -175, y: 200, width: 350, height: 100))
+        let background = SKShapeNode(rect: CGRect(x: -175, y: 220, width: 350, height: 100))
         background.fillColor = .blue
         background.zPosition = -10
         return background
@@ -63,8 +72,8 @@ class BattleScene: SKScene {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(13.0)
         label.fontColor = .black
-        label.position = CGPoint(x: -165, y: 275)
-        label.text = "Enemy HP:  \(Int(enemy.currentHealth)) / \(Int(enemy.maxHealth))"
+        label.position = CGPoint(x: -5, y: 295)
+        label.text = "| Enemy HP:  \(Int(enemy.currentHealth)) / \(Int(enemy.maxHealth))"
         label.horizontalAlignmentMode = .left
         return label
     }()
@@ -73,8 +82,8 @@ class BattleScene: SKScene {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(13.0)
         label.fontColor = .black
-        label.position = CGPoint(x: 0, y: 275)
-        label.text = "| Hero HP:  \(Int(hero.currentHealth)) / \(Int(hero.maxHealth))"
+        label.position = CGPoint(x: -165, y: 295)
+        label.text = "Hero HP:  \(Int(hero.currentHealth)) / \(Int(hero.maxHealth))"
         label.horizontalAlignmentMode = .left
         return label
     }()
@@ -83,8 +92,8 @@ class BattleScene: SKScene {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(13.0)
         label.fontColor = .black
-        label.position = CGPoint(x: 0, y: 255)
-        label.text = "| Hero NRG:  \(Int(hero.currentEnergy)) / \(Int(hero.maxEnergy))"
+        label.position = CGPoint(x: -165, y: 275)
+        label.text = "Hero NRG:  \(Int(hero.currentEnergy)) / \(Int(hero.maxEnergy))"
         label.horizontalAlignmentMode = .left
         return label
     }()
@@ -108,7 +117,7 @@ class BattleScene: SKScene {
     lazy var retryLabel: SKAdvancedLabelNode = {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(15.0)
-        label.fontColor = .black
+        label.fontColor = .white
         label.position = CGPoint(x: 0, y: 100)
         label.alpha = 0
         label.horizontalAlignmentMode = .center
@@ -118,7 +127,7 @@ class BattleScene: SKScene {
     lazy var messageLabel: SKAdvancedLabelNode = {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(15.0)
-        label.fontColor = .black
+        label.fontColor = .white
         label.text = "BATTLE START!"
         label.position = CGPoint(x: 0, y: 150)
         label.horizontalAlignmentMode = .center
@@ -202,14 +211,14 @@ class BattleScene: SKScene {
     
     lazy var enemyHealthBar: SKSpriteNode = {
         let bar = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 15))
-        bar.position = CGPoint(x: -140, y: 25)
+        bar.position = CGPoint(x: 125, y: 25)
         bar.zPosition = -1
         return bar
     }()
     
     lazy var enemyHealthBarDamage: SKSpriteNode = {
         let bar = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 15))
-        bar.position = CGPoint(x: -140, y: 25)
+        bar.position = CGPoint(x: 125, y: 25)
         bar.zPosition = -2
         return bar
     }()
@@ -217,8 +226,8 @@ class BattleScene: SKScene {
     lazy var enemyNumberLabel: SKAdvancedLabelNode = {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(15.0)
-        label.fontColor = .black
-        label.position = CGPoint(x: -90, y: -10)
+        label.fontColor = .white
+        label.position = CGPoint(x: 65, y: -10)
         label.alpha = 0
         label.zPosition = 5
         label.horizontalAlignmentMode = .center
@@ -228,8 +237,8 @@ class BattleScene: SKScene {
     lazy var enemyStatusLabel: SKAdvancedLabelNode = {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(15.0)
-        label.fontColor = .black
-        label.position = CGPoint(x: -90, y: 30)
+        label.fontColor = .white
+        label.position = CGPoint(x: 90, y: 30)
         label.alpha = 0
         label.zPosition = 5
         label.horizontalAlignmentMode = .center
@@ -238,7 +247,7 @@ class BattleScene: SKScene {
     
     lazy var enemyTargetArrow: SKSpriteNode = {
         let arrow = SKSpriteNode(imageNamed: "downArrow")
-        arrow.position = CGPoint(x: -140, y: 50)
+        arrow.position = CGPoint(x: 125, y: 55)
         arrow.size = CGSize(width: 30, height: 30)
         return arrow
     }()
@@ -246,8 +255,8 @@ class BattleScene: SKScene {
     lazy var targetLabel: SKAdvancedLabelNode = {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(15.0)
-        label.fontColor = .black
-        label.position = CGPoint(x: -140, y: 70)
+        label.fontColor = .white
+        label.position = CGPoint(x: 125, y: 80)
         label.text = "Target"
         label.horizontalAlignmentMode = .center
         
@@ -258,28 +267,29 @@ class BattleScene: SKScene {
     //MARK: - Hero UI Nodes
     lazy var heroHealthBar: SKSpriteNode = {
         let bar = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 15))
-        bar.position = CGPoint(x: 125, y: 35)
+        bar.position = CGPoint(x: -140, y: 35)
         bar.zPosition = -1
+        
         return bar
     }()
     
     lazy var heroHealthBarDamage: SKSpriteNode = {
         let bar = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 15))
-        bar.position = CGPoint(x: 125, y: 35)
+        bar.position = CGPoint(x: -140, y: 35)
         bar.zPosition = -2
         return bar
     }()
     
     lazy var heroEnergyBar: SKSpriteNode = {
         let bar = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 15))
-        bar.position = CGPoint(x: 125, y: 15)
+        bar.position = CGPoint(x: -140, y: 15)
         bar.zPosition = -1
         return bar
     }()
     
     lazy var heroEnergyBarDepletion: SKSpriteNode = {
         let bar = SKSpriteNode(color: .black, size: CGSize(width: 50, height: 15))
-        bar.position = CGPoint(x: 125, y: 15)
+        bar.position = CGPoint(x: -140, y: 15)
         bar.zPosition = -2
         return bar
     }()
@@ -287,8 +297,8 @@ class BattleScene: SKScene {
     lazy var heroNumberLabel: SKAdvancedLabelNode = {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(15.0)
-        label.fontColor = .black
-        label.position = CGPoint(x: 65, y: -10)
+        label.fontColor = .white
+        label.position = CGPoint(x: -90, y: -10)
         label.alpha = 0
         label.zPosition = 5
         label.horizontalAlignmentMode = .center
@@ -298,8 +308,8 @@ class BattleScene: SKScene {
     lazy var heroStatusLabel: SKAdvancedLabelNode = {
         let label = SKAdvancedLabelNode(fontNamed: "Optima-ExtraBlack")
         label.fontSize = CGFloat(15.0)
-        label.fontColor = .black
-        label.position = CGPoint(x: 90, y: 30)
+        label.fontColor = .white
+        label.position = CGPoint(x: -90, y: 30)
         label.alpha = 0
         label.zPosition = 5
         label.horizontalAlignmentMode = .center
@@ -351,6 +361,10 @@ class BattleScene: SKScene {
             
             let location: CGPoint = touch.location(in: self)
             
+            
+           
+            
+            
             if attackButton.contains(location) && !attackButton.isPaused {
                 
                 highlightAttackButton()
@@ -369,12 +383,12 @@ class BattleScene: SKScene {
             } else if refreshButton.contains(location) && !refreshButton.isPaused {
                 
                 highlightRefreshButton()
-                updateInfoLabel(location: location, text: "Chant for one turn before restoring \(Int(hero.strength * 4)) HP. Consumes 25 NRG.")
+                updateInfoLabel(location: location, text: "Chant for one turn before restoring \(Int(hero.strength * 4)) HP and curing status problems. Consumes 25 NRG.")
                 
             } else if energyBurstButton.contains(location) && !energyBurstButton.isPaused {
                 
                 highlightEnergyBurstButton()
-                updateInfoLabel(location: location, text: "Unleash a vicious burst of raw energy and instantly deal \(Int(hero.strength * 4)) damage. Consumes 50 NRG.")
+                updateInfoLabel(location: location, text: "Unleash a vicious burst of raw energy that instantly deals \(Int(hero.strength * 4)) damage. Consumes 50 NRG.")
                 
             } else if enemy.contains(location) {
                 
@@ -382,7 +396,7 @@ class BattleScene: SKScene {
                 
             } else if hero.contains(location) {
                 
-                updateInfoLabel(location: location, text: "Strength: \(Int(hero.strength))")
+                updateInfoLabel(location: location, text: "Strength: \(Int(hero.strength)) \n Status: \(hero.statusProblem)")
                 
             } else {
                 revertButtons()
@@ -444,6 +458,7 @@ class BattleScene: SKScene {
         addChild(retryLabel)
         addChild(messageLabel)
         addChild(menuBackground)
+        addChild(battleBackground)
         addChild(attackButton)
         addChild(abilityButton)
         addChild(backButton)
@@ -471,7 +486,6 @@ class BattleScene: SKScene {
         disableCommandButtons()
         messageLabel.shake(delay: 0.2)
         
-        print(energyBurstButton.isPaused)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5 ) {
             self.showMessage(text: "Long press a button for command info!")
             self.enableCommandButtons()
@@ -588,7 +602,7 @@ class BattleScene: SKScene {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
             self.energyBurstButton.isPaused = false
         }
-       
+        
         energyBurstButton.isHidden = false
     }
     
@@ -643,6 +657,7 @@ class BattleScene: SKScene {
             heroAttacks()
             
         case "ability":
+            
             if let abilityType = abilityType, let chantTurns = chantTurns {
                 
                 turnsLeft = chantTurns
@@ -661,7 +676,7 @@ class BattleScene: SKScene {
                 }
             }
         case "items":
-            showMessage(text: "Bruh did you read lol")
+            showMessage(text: "Turn wasted! Watch out :P ")
             
         case "paralysis":
             showMessage(text: "Paralyzed!")
@@ -672,7 +687,7 @@ class BattleScene: SKScene {
             hero.texture = heroDamaged
             animateHero()
             hero.statusProblem = .none
-     
+            
         default:
             break
         }
@@ -699,10 +714,45 @@ class BattleScene: SKScene {
                         self.heroNumberLabel.alpha = 0
                         
                         if self.hero.currentHealth > 0 {
-                            
+                        
                             switch self.hero.statusProblem {
                             case .paralysis:
                                 self.battlePhase(attackType: "paralysis", abilityType: nil, chantTurns: nil)
+                            //MARK: - Poison
+                            case .poison:
+                                self.showMessage(text: "Hero is damaged by poison!")
+                                self.hero.currentHealth -= self.enemy.strength
+                                self.heroNumberLabel.text = "\(Int(self.enemy.strength))!"
+                                self.heroNumberLabel.alpha = 1
+                                self.heroNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
+                                self.heroStatusLabel.text = "Poisoned!"
+                                self.heroStatusLabel.alpha = 1
+                                self.heroStatusLabel.shake(delay: 0.2)
+                                self.hero.removeAllActions()
+                                self.hero.texture = self.heroDamaged
+                                self.animateHeroHealthBar()
+                                self.animateHero()
+                                
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                                    self.heroStatusLabel.alpha = 0
+                                    self.heroNumberLabel.alpha = 0
+                                    
+                                    if self.hero.healthCondition != .dead {
+                                        
+                                        if turnsLeft > 0 {
+                                            self.battlePhase(attackType: "ability", abilityType: abilityType , chantTurns: turnsLeft - 1)
+                                        } else {
+                                            self.showMessage(text: "Select a command!")
+                                            self.enableCommandButtons()
+                                        }
+                                    }
+                                    
+                                   
+                                    
+                                    
+                                   
+                                }
+                                
                                 
                             default:
                                 
@@ -742,7 +792,7 @@ class BattleScene: SKScene {
         
         enemy.currentHealth -= heroAttackPower
         enemyNumberLabel.text = "\(Int(heroAttackPower))!"
-        enemyNumberLabel.fontColor = .black
+        enemyNumberLabel.fontColor = .white
         enemyNumberLabel.alpha = 1.0
         enemyNumberLabel.sequentiallyBouncingZoom(delay: 0.2, infinite: false)
         enemy.texture = enemyDamaged
@@ -768,7 +818,7 @@ class BattleScene: SKScene {
         }
     }
     
-  
+    
     
     private func heroCastsRefresh() {
         let heal = hero.strength * 4
@@ -789,20 +839,23 @@ class BattleScene: SKScene {
         
         animateHeroHealthBar()
         animateHero()
+        
     }
     
     private func heroChargesEnergyBurst() {
-          if hero.currentEnergy >= 50 {
+        if hero.currentEnergy >= 50 {
             hero.currentEnergy -= 50
             heroNumberLabel.alpha = 1
             heroNumberLabel.fontColor = .blue
             animateHeroEnergyBar(energyCost: 50)
             hero.condition = .chanting
             animateHero()
+            switchToCommands()
+            disableCommandButtons()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.battlePhase(attackType: "ability", abilityType: "energyBurst", chantTurns: 0)
             }
-          } else {
+        } else {
             showMessage(text: "Not enough energy!")
             switchToCommands()
             disableCommandButtons()
@@ -811,7 +864,7 @@ class BattleScene: SKScene {
                 self.enableCommandButtons()
             }
         }
-      }
+    }
     
     
     private func heroCastsEnergyBurst() {
@@ -829,22 +882,22 @@ class BattleScene: SKScene {
         animateEnemy()
         switchToCommands()
         disableCommandButtons()
-        
     }
     
     
     
-    
+
     //MARK: - Enemy Attacks
     private func enemyAttacks() {
         
         let attackType = Int.random(in: 1...50)
+
         
         let enemyAttackPower = enemy.strength - hero.durability
         switch attackType {
         case 1...20:
             switch attackType {
-            case 1...15:
+            case 1...5:
                 showMessage(text: "Enemy casts Enrage!")
                 enemy.strength += 10
                 enemyStatusLabel.alpha = 1
@@ -865,11 +918,20 @@ class BattleScene: SKScene {
                 hero.removeAllActions()
                 hero.texture = heroDamaged
                 animateHeroHealthBar()
+            case 6...15:
+                showMessage(text: "Poisoned!")
+                hero.statusProblem = .poison
+                heroStatusLabel.alpha = 1
+                heroStatusLabel.text = "Poisoned!"
+                heroStatusLabel.shake(delay: 0.2)
+                hero.removeAllActions()
+                hero.texture = heroDamaged
+                
             default:
                 break
             }
             
-        case 46...50:
+        case 50:
             showMessage(text: "Enemy attack missed!")
         default:
             showMessage(text: "Enemy attacks!")
@@ -881,7 +943,7 @@ class BattleScene: SKScene {
             hero.texture = heroDamaged
         }
         
-        heroNumberLabel.fontColor = .black
+        heroNumberLabel.fontColor = .white
         
         animateHeroHealthBar()
         
@@ -936,7 +998,7 @@ class BattleScene: SKScene {
     }
     
     private func animateHeroHealthBar() {
-        heroHPLabel.text = "| Hero HP: \(Int(hero.currentHealth)) / \(Int(hero.maxHealth))"
+        heroHPLabel.text = "Hero HP: \(Int(hero.currentHealth)) / \(Int(hero.maxHealth))"
         
         if hero.currentHealth > hero.maxHealth {
             heroHealthBar.alpha = 1
@@ -951,7 +1013,7 @@ class BattleScene: SKScene {
     
     private func animateHeroEnergyBar(energyCost: Double) {
         
-        heroNRGLabel.text = "| Hero NRG: \(Int(hero.currentEnergy)) / \(Int(hero.maxEnergy))"
+        heroNRGLabel.text = "Hero NRG: \(Int(hero.currentEnergy)) / \(Int(hero.maxEnergy))"
         
         if hero.currentEnergy > hero.maxEnergy {
             heroEnergyBar.alpha = 1
@@ -959,7 +1021,7 @@ class BattleScene: SKScene {
         } else if hero.currentEnergy > 0 {
             heroEnergyBar.alpha = 1
             heroEnergyBar.size = CGSize(width: (hero.currentEnergy/hero.maxEnergy) * 50, height: 15)
-            heroNumberLabel.fontColor = .blue
+            heroNumberLabel.fontColor = .yellow
             heroNumberLabel.text = "-\(Int(energyCost)) NRG"
             heroNumberLabel.alpha = 1.0
             if energyCost == 0 {
@@ -1014,7 +1076,7 @@ class BattleScene: SKScene {
     
     private func animateEnemyHealthBar() {
         
-        enemyHPLabel.text = "Enemy HP: \(Int(enemy.currentHealth)) / \(Int(enemy.maxHealth))"
+        enemyHPLabel.text = "| Enemy HP: \(Int(enemy.currentHealth)) / \(Int(enemy.maxHealth))"
         
         if enemy.currentHealth > enemy.maxHealth {
             enemyHealthBar.alpha = 1
@@ -1024,10 +1086,13 @@ class BattleScene: SKScene {
             enemyHealthBar.size = CGSize(width: (enemy.currentHealth/enemy.maxHealth) * 50, height: 15)
         } else {
             enemyHealthBar.alpha = 0
-            enemyHPLabel.text = "Enemy HP: 0 / \(Int(enemy.maxHealth))"
+            enemyHPLabel.text = "| Enemy HP: 0 / \(Int(enemy.maxHealth))"
         }
     }
     
 }
+
+
+
 
 
